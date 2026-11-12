@@ -6,8 +6,7 @@ import { fixtureBundle } from "./fixture";
 import { GraphWorkspace } from "./graph-workspace";
 import styles from "./repo-time-machine.module.css";
 
-const apiBase =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:3001";
+const apiBase = "/api/service";
 
 const statusCopy: Record<AnalysisJob["status"], string> = {
   queued: "任务已排队",
