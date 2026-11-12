@@ -22,6 +22,11 @@ export type RepositoryValidation =
   | { ok: false; message: string };
 
 const githubName = /^[A-Za-z0-9._-]+$/;
+const terminalStatuses = new Set<JobStatus>([
+  "ready",
+  "failed",
+  "cancelled",
+]);
 
 export function validateGithubRepository(url: string): RepositoryValidation {
   let parsed: URL;
@@ -80,10 +85,35 @@ export interface JobStore {
   countOutstanding(): Promise<number>;
 }
 
+export interface InMemoryJobStoreOptions {
+  maxTerminalAgeMs: number;
+  maxEntries: number;
+}
+
 export class InMemoryJobStore implements JobStore {
   private readonly jobs = new Map<string, AnalysisJob>();
+  private readonly retention: InMemoryJobStoreOptions;
+
+  constructor(
+    retention: Partial<InMemoryJobStoreOptions> = {},
+    private readonly clock: () => number = Date.now,
+  ) {
+    this.retention = {
+      maxTerminalAgeMs: retention.maxTerminalAgeMs ?? 60 * 60 * 1000,
+      maxEntries: retention.maxEntries ?? 100,
+    };
+  }
 
   async create(job: AnalysisJob): Promise<void> {
+    this.prune();
+    if (this.jobs.size >= this.retention.maxEntries) {
+      const oldestTerminal = [...this.jobs.values()]
+        .filter((candidate) => terminalStatuses.has(candidate.status))
+        .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt))[0];
+      if (oldestTerminal) {
+        this.jobs.delete(oldestTerminal.id);
+      }
+    }
     this.jobs.set(job.id, structuredClone(job));
   }
 
@@ -109,6 +139,18 @@ export class InMemoryJobStore implements JobStore {
     return [...this.jobs.values()].filter(
       (job) => !["ready", "failed", "cancelled"].includes(job.status),
     ).length;
+  }
+
+  private prune(): void {
+    const cutoff = this.clock() - this.retention.maxTerminalAgeMs;
+    for (const [id, job] of this.jobs) {
+      if (
+        terminalStatuses.has(job.status) &&
+        Date.parse(job.updatedAt) <= cutoff
+      ) {
+        this.jobs.delete(id);
+      }
+    }
   }
 }
 
@@ -182,12 +224,6 @@ const defaultAdmission: AdmissionPolicy = {
   windowMs: 60_000,
   maxOutstandingJobs: 4,
 };
-
-const terminalStatuses = new Set<JobStatus>([
-  "ready",
-  "failed",
-  "cancelled",
-]);
 
 export function buildServer(options: ServerOptions): FastifyInstance {
   const server = Fastify({ logger: false });

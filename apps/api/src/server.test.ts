@@ -184,3 +184,44 @@ describe("analysis API", () => {
     expect(onJobCancelled).toHaveBeenCalledWith(jobId);
   });
 });
+
+describe("InMemoryJobStore", () => {
+  it("prunes expired terminal jobs when new work arrives", async () => {
+    let currentTime = 0;
+    const store = new InMemoryJobStore(
+      { maxTerminalAgeMs: 1_000, maxEntries: 10 },
+      () => currentTime,
+    );
+    const base = {
+      repository: {
+        owner: "acme",
+        name: "widget",
+        canonicalUrl: "https://github.com/acme/widget",
+      },
+      branch: "main",
+      progress: 100,
+      createdAt: "1970-01-01T00:00:00.000Z",
+      updatedAt: "1970-01-01T00:00:00.000Z",
+    };
+    await store.create({
+      ...base,
+      id: "00000000-0000-4000-8000-000000000001",
+      status: "ready",
+    });
+    currentTime = 2_000;
+
+    await store.create({
+      ...base,
+      id: "00000000-0000-4000-8000-000000000002",
+      status: "queued",
+      progress: 0,
+    });
+
+    expect(
+      await store.get("00000000-0000-4000-8000-000000000001"),
+    ).toBeUndefined();
+    expect(
+      await store.get("00000000-0000-4000-8000-000000000002"),
+    ).toBeDefined();
+  });
+});
