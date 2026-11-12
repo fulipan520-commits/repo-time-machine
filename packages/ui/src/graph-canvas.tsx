@@ -19,6 +19,28 @@ const colors: Record<ModuleNode["status"], string> = {
   shrinking: "#637b91",
 };
 
+export function highlightedNodeIds(
+  snapshot: Snapshot,
+  selectedId?: string,
+): Set<string> {
+  const highlighted = new Set<string>();
+  if (!selectedId) {
+    snapshot.nodes.forEach((node) => highlighted.add(node.id));
+    return highlighted;
+  }
+
+  highlighted.add(selectedId);
+  for (const edge of snapshot.edges) {
+    if (edge.source === selectedId) {
+      highlighted.add(edge.target);
+    }
+    if (edge.target === selectedId) {
+      highlighted.add(edge.source);
+    }
+  }
+  return highlighted;
+}
+
 function positionsFor(snapshot: Snapshot): Map<string, { x: number; y: number }> {
   const positions = new Map<string, { x: number; y: number }>();
   const count = Math.max(1, snapshot.nodes.length);
@@ -39,6 +61,11 @@ export function GraphCanvas({
   onSelect,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<Graph | null>(null);
+  const rendererRef = useRef<{
+    kill: () => void;
+    refresh: () => void;
+  } | null>(null);
   const [webglReady, setWebglReady] = useState(false);
   const positions = useMemo(() => positionsFor(snapshot), [snapshot]);
   const nodeById = useMemo(
@@ -53,7 +80,12 @@ export function GraphCanvas({
       return undefined;
     }
     container.replaceChildren();
-    let renderer: { kill: () => void } | undefined;
+    let renderer:
+      | {
+          kill: () => void;
+          refresh: () => void;
+        }
+      | undefined;
     let cancelled = false;
 
     void import("sigma")
@@ -88,6 +120,8 @@ export function GraphCanvas({
         });
         sigma.on("clickNode", ({ node }) => onSelect(node));
         renderer = sigma;
+        graphRef.current = graph;
+        rendererRef.current = sigma;
         setWebglReady(true);
       })
       .catch(() => {
@@ -97,9 +131,48 @@ export function GraphCanvas({
     return () => {
       cancelled = true;
       renderer?.kill();
+      graphRef.current = null;
+      rendererRef.current = null;
       container.replaceChildren();
     };
   }, [onSelect, positions, snapshot.edges, snapshot.nodes]);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    const renderer = rendererRef.current;
+    if (!graph || !renderer) {
+      return;
+    }
+
+    const highlighted = highlightedNodeIds(snapshot, selectedId);
+    for (const node of snapshot.nodes) {
+      if (!graph.hasNode(node.id)) {
+        continue;
+      }
+      const active = highlighted.has(node.id);
+      graph.setNodeAttribute(
+        node.id,
+        "color",
+        selectedId && !active ? "#aeb9b3" : colors[node.status],
+      );
+      graph.setNodeAttribute(
+        node.id,
+        "size",
+        Math.max(5, Math.min(22, Math.sqrt(node.loc) / 3.4)) *
+          (node.id === selectedId ? 1.3 : 1),
+      );
+    }
+    graph.forEachEdge((edge, _attributes, source, target) => {
+      graph.setEdgeAttribute(
+        edge,
+        "color",
+        !selectedId || (highlighted.has(source) && highlighted.has(target))
+          ? "rgba(28, 57, 52, 0.26)"
+          : "rgba(28, 57, 52, 0.08)",
+      );
+    });
+    renderer.refresh();
+  }, [selectedId, snapshot]);
 
   return (
     <div className={styles.graphFrame}>
