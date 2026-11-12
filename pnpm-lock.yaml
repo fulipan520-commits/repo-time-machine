@@ -21,6 +21,28 @@ importers:
         specifier: ^3.1.4
         version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
 
+  packages/analyzer:
+    dependencies:
+      '@rtm/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      tree-sitter-wasms:
+        specifier: ^0.1.13
+        version: 0.1.13
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      web-tree-sitter:
+        specifier: 0.20.8
+        version: 0.20.8
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.5
+      vitest:
+        specifier: ^3.1.4
+        version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
+
   packages/contracts:
     dependencies:
       zod:
@@ -508,6 +530,9 @@ packages:
     resolution: {integrity: sha512-u8KszXvGfU68hVcZpRHKG28T0krMuv2G5nDhiHaMLen/gIuFEgIJhaJuO69qjnXg5paSrbPMFfx3brNuN8eVSg==}
     engines: {node: '>=14.0.0'}
 
+  tree-sitter-wasms@0.1.13:
+    resolution: {integrity: sha512-wT+cR6DwaIz80/vho3AvSF0N4txuNx/5bcRKoXouOfClpxh/qqrF4URNLQXbbt8MaAxeksZcZd1j8gcGjc+QxQ==}
+
   tsx@4.23.15:
     resolution: {integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==}
     engines: {node: '>=18.0.0'}
@@ -593,6 +618,9 @@ packages:
         optional: true
       jsdom:
         optional: true
+
+  web-tree-sitter@0.20.8:
+    resolution: {integrity: sha512-weOVgZ3aAARgdnb220GqYuh7+rZU0Ka9k9yfKtGAzEYMa6GgiCzW9JjQRJyCJakvibQW+dfjJdihjInKuuCAUQ==}
 
   why-is-node-running@2.3.0:
     resolution: {integrity: sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w==}
@@ -966,6 +994,8 @@ snapshots:
 
   tinyspy@4.0.6: {}
 
+  tree-sitter-wasms@0.1.13: {}
+
   tsx@4.23.15:
     dependencies:
       esbuild: 0.28.2
@@ -1050,6 +1080,8 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  web-tree-sitter@0.20.8: {}
 
   why-is-node-running@2.3.0:
     dependencies:
