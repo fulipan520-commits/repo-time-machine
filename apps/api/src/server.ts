@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { gunzipSync } from "node:zlib";
 import cors from "@fastify/cors";
 import type {
   AnalysisJob,
@@ -105,18 +106,18 @@ export class InMemoryJobStore implements JobStore {
 }
 
 export interface BundleStore {
-  put(key: string, content: string): Promise<void>;
-  get(key: string): Promise<string | undefined>;
+  put(key: string, content: Buffer): Promise<void>;
+  get(key: string): Promise<Buffer | undefined>;
 }
 
 export class InMemoryBundleStore implements BundleStore {
-  private readonly bundles = new Map<string, string>();
+  private readonly bundles = new Map<string, Buffer>();
 
-  async put(key: string, content: string): Promise<void> {
+  async put(key: string, content: Buffer): Promise<void> {
     this.bundles.set(key, content);
   }
 
-  async get(key: string): Promise<string | undefined> {
+  async get(key: string): Promise<Buffer | undefined> {
     return this.bundles.get(key);
   }
 }
@@ -131,14 +132,14 @@ export class FileBundleStore implements BundleStore {
     return path.join(this.rootDirectory, `${key}.json.gz`);
   }
 
-  async put(key: string, content: string): Promise<void> {
+  async put(key: string, content: Buffer): Promise<void> {
     await mkdir(this.rootDirectory, { recursive: true });
-    await writeFile(this.pathFor(key), content, "utf8");
+    await writeFile(this.pathFor(key), content);
   }
 
-  async get(key: string): Promise<string | undefined> {
+  async get(key: string): Promise<Buffer | undefined> {
     try {
-      return await readFile(this.pathFor(key), "utf8");
+      return await readFile(this.pathFor(key));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return undefined;
@@ -157,6 +158,7 @@ export interface ServerOptions {
   jobStore: JobStore;
   bundleStore: BundleStore;
   now?: () => Date;
+  onJobCreated?: (job: AnalysisJob) => void;
 }
 
 const terminalStatuses = new Set<JobStatus>([
@@ -201,6 +203,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
       updatedAt: timestamp,
     });
     await options.jobStore.create(job);
+    options.onJobCreated?.(job);
     return reply.code(202).send(job);
   });
 
@@ -258,12 +261,13 @@ export function buildServer(options: ServerOptions): FastifyInstance {
         });
       }
 
-      const bundle = await options.bundleStore.get(job.bundleKey);
-      if (!bundle) {
+      const compressedBundle = await options.bundleStore.get(job.bundleKey);
+      if (!compressedBundle) {
         return reply.code(404).send({
           error: { code: "BUNDLE_NOT_FOUND", message: "Bundle is unavailable." },
         });
       }
+      const bundle = gunzipSync(compressedBundle).toString("utf8");
       return reply
         .header("cache-control", "public, max-age=31536000, immutable")
         .type("application/json")

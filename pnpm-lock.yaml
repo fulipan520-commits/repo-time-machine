@@ -29,12 +29,37 @@ importers:
       '@rtm/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@rtm/worker':
+        specifier: workspace:*
+        version: link:../worker
       fastify:
         specifier: ^5.3.3
         version: 5.12.8
       zod:
         specifier: ^3.25.0
         version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.5
+      tsx:
+        specifier: ^4.19.4
+        version: 4.23.15
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.4
+        version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
+
+  apps/worker:
+    dependencies:
+      '@rtm/analyzer':
+        specifier: workspace:*
+        version: link:../../packages/analyzer
+      '@rtm/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
