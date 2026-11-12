@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: repo-time-machine-api-520
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.api
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: BUNDLE_DIRECTORY
+        value: /tmp/bundles
+
+  - type: web
+    name: repo-time-machine-web-520
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.web
+    healthCheckPath: /
+    envVars:
+      - key: API_HOST
+        fromService:
+          type: web
+          name: repo-time-machine-api-520
+          property: host

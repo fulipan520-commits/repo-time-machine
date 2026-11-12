@@ -32,6 +32,10 @@ pnpm dev
 Open `http://127.0.0.1:3000`. Choose “先用示例仓库看看” to explore without a
 network request, or enter a public repository URL.
 
+The web app proxies analysis requests through same-origin `/api/service/*`
+routes. Locally it forwards to port 3001; on Render it discovers the API host
+from the Blueprint.
+
 ## CLI
 
 Analyze any local Git checkout:

@@ -20,7 +20,7 @@ Environment variables:
 | `PORT` | `3001` | API port |
 | `HOST` | `127.0.0.1` | API bind address |
 | `BUNDLE_DIRECTORY` | `.data/bundles` | Local snapshot storage |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://127.0.0.1:3001` | Browser API origin |
+| `API_ORIGIN` | `http://127.0.0.1:3001` | Web server proxy origin |
 
 ## Docker
 
@@ -30,6 +30,18 @@ docker compose up --build
 
 This is a single-node deployment. Web and API run in separate containers, while
 the API container performs analysis and writes snapshots to a named volume.
+
+## Render Blueprint
+
+The repository includes `render.yaml` with two free-plan Docker services:
+
+- `repo-time-machine-api-520`: API and embedded worker
+- `repo-time-machine-web-520`: Next.js web app and same-origin proxy
+
+The API stores snapshots under `/tmp/bundles`, so results survive normal
+requests but not service restarts. This is suitable for a public demo. Attach a
+Render disk or move snapshots to object storage before relying on long-lived
+results.
 
 ## Production boundary
 
