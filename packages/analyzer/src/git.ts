@@ -20,6 +20,11 @@ export interface GitCommandOptions {
   maxBuffer?: number;
 }
 
+function toIsoDateTime(value: string): string {
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? new Date(0).toISOString() : new Date(timestamp).toISOString();
+}
+
 async function runGit(
   repositoryPath: string,
   args: readonly string[],
@@ -39,6 +44,12 @@ export async function getHeadSha(
 ): Promise<string> {
   return (
     await runGit(repositoryPath, ["rev-parse", `${branch}^{commit}`])
+  ).trim();
+}
+
+export async function getCurrentBranch(repositoryPath: string): Promise<string> {
+  return (
+    await runGit(repositoryPath, ["rev-parse", "--abbrev-ref", "HEAD"])
   ).trim();
 }
 
@@ -64,7 +75,7 @@ export async function listCommits(
       const [sha, authoredAt, author, ...title] = line.split("\x1f");
       return {
         sha: sha ?? "",
-        authoredAt: authoredAt ?? "",
+        authoredAt: toIsoDateTime(authoredAt ?? ""),
         author: author ?? "",
         title: title.join("\x1f"),
       };
