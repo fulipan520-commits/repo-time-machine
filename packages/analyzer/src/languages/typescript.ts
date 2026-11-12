@@ -51,6 +51,9 @@ function applyAlias(
     const suffix =
       starIndex === -1 ? "" : alias.pattern.slice(starIndex + 1);
 
+    if (starIndex === -1 && specifier !== alias.pattern) {
+      continue;
+    }
     if (
       !specifier.startsWith(prefix) ||
       !specifier.endsWith(suffix)

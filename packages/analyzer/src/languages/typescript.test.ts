@@ -35,3 +35,13 @@ it("ignores bare package imports and files outside the repository", () => {
 
   expect(result).toEqual([]);
 });
+
+it("does not treat an exact alias as a wildcard", () => {
+  const result = extractTypeScriptImports(
+    "src/main.ts",
+    "import config from '@app/config';",
+    [{ pattern: "@app", targets: ["src/app"] }],
+  );
+
+  expect(result).toEqual([]);
+});
