@@ -8,11 +8,14 @@ import {
 
 const servers: Array<Awaited<ReturnType<typeof buildServer>>> = [];
 
-function createServer(): ReturnType<typeof buildServer> {
+function createServer(
+  options: Partial<Parameters<typeof buildServer>[0]> = {},
+): ReturnType<typeof buildServer> {
   const server = buildServer({
     jobStore: new InMemoryJobStore(),
     bundleStore: new InMemoryBundleStore(),
     now: () => new Date("2026-11-12T00:00:00.000Z"),
+    ...options,
   });
   servers.push(server);
   return server;
@@ -106,5 +109,60 @@ describe("analysis API", () => {
 
     expect(invalid.statusCode).toBe(400);
     expect(missing.statusCode).toBe(404);
+  });
+
+  it("rate limits analysis creation by client address", async () => {
+    const server = createServer({
+      admission: {
+        maxRequestsPerWindow: 1,
+        windowMs: 60_000,
+        maxOutstandingJobs: 10,
+      },
+    });
+
+    const first = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const second = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+
+    expect(first.statusCode).toBe(202);
+    expect(second.statusCode).toBe(429);
+    expect(second.headers["retry-after"]).toBe("60");
+    expect(second.json().error.code).toBe("RATE_LIMITED");
+  });
+
+  it("rejects new jobs when the outstanding-job cap is reached", async () => {
+    const server = createServer({
+      admission: {
+        maxRequestsPerWindow: 10,
+        windowMs: 60_000,
+        maxOutstandingJobs: 1,
+      },
+    });
+
+    const first = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const second = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.11",
+      payload: { repositoryUrl: "https://github.com/acme/other" },
+    });
+
+    expect(first.statusCode).toBe(202);
+    expect(second.statusCode).toBe(429);
+    expect(second.json().error.code).toBe("CAPACITY_REACHED");
   });
 });

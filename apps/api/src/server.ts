@@ -77,6 +77,7 @@ export interface JobStore {
   create(job: AnalysisJob): Promise<void>;
   get(id: string): Promise<AnalysisJob | undefined>;
   update(id: string, patch: Partial<AnalysisJob>): Promise<AnalysisJob | undefined>;
+  countOutstanding(): Promise<number>;
 }
 
 export class InMemoryJobStore implements JobStore {
@@ -102,6 +103,12 @@ export class InMemoryJobStore implements JobStore {
     const next = analysisJobSchema.parse({ ...current, ...patch });
     this.jobs.set(id, next);
     return structuredClone(next);
+  }
+
+  async countOutstanding(): Promise<number> {
+    return [...this.jobs.values()].filter(
+      (job) => !["ready", "failed", "cancelled"].includes(job.status),
+    ).length;
   }
 }
 
@@ -159,7 +166,21 @@ export interface ServerOptions {
   bundleStore: BundleStore;
   now?: () => Date;
   onJobCreated?: (job: AnalysisJob) => void;
+  admission?: AdmissionPolicy;
+  allowedOrigins?: string[];
 }
+
+export interface AdmissionPolicy {
+  maxRequestsPerWindow: number;
+  windowMs: number;
+  maxOutstandingJobs: number;
+}
+
+const defaultAdmission: AdmissionPolicy = {
+  maxRequestsPerWindow: 8,
+  windowMs: 60_000,
+  maxOutstandingJobs: 4,
+};
 
 const terminalStatuses = new Set<JobStatus>([
   "ready",
@@ -170,7 +191,11 @@ const terminalStatuses = new Set<JobStatus>([
 export function buildServer(options: ServerOptions): FastifyInstance {
   const server = Fastify({ logger: false });
   const now = options.now ?? (() => new Date());
-  server.register(cors, { origin: true });
+  const admission = options.admission ?? defaultAdmission;
+  const requestHistory = new Map<string, number[]>();
+  if (options.allowedOrigins && options.allowedOrigins.length > 0) {
+    server.register(cors, { origin: options.allowedOrigins });
+  }
 
   server.get("/healthz", async () => ({ status: "ok" }));
 
@@ -191,6 +216,41 @@ export function buildServer(options: ServerOptions): FastifyInstance {
         error: { code: "INVALID_REPOSITORY", message: repository.message },
       });
     }
+
+    if ((await options.jobStore.countOutstanding()) >= admission.maxOutstandingJobs) {
+      return reply.code(429).send({
+        error: {
+          code: "CAPACITY_REACHED",
+          message: "The analysis queue is full. Try again later.",
+        },
+      });
+    }
+
+    const currentTime = now().getTime();
+    const requests = (requestHistory.get(request.ip) ?? []).filter(
+      (timestamp) => timestamp > currentTime - admission.windowMs,
+    );
+    if (requests.length >= admission.maxRequestsPerWindow) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil(
+          ((requests[0] ?? currentTime) + admission.windowMs - currentTime) /
+            1000,
+        ),
+      );
+      requestHistory.set(request.ip, requests);
+      return reply
+        .code(429)
+        .header("retry-after", String(retryAfterSeconds))
+        .send({
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many analyses requested. Try again later.",
+          },
+        });
+    }
+    requests.push(currentTime);
+    requestHistory.set(request.ip, requests);
 
     const timestamp = now().toISOString();
     const job = analysisJobSchema.parse({
