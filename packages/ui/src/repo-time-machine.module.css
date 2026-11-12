@@ -1,0 +1,559 @@
+.page {
+  --ink: #11241f;
+  --ink-soft: #596a63;
+  --paper: #e2e9e2;
+  --panel: #f4f5ed;
+  --teal: #176c65;
+  --rust: #b7563d;
+  --ochre: #d39b34;
+  --rule: rgba(17, 36, 31, 0.2);
+  background:
+    radial-gradient(circle at 72% 28%, rgba(23, 108, 101, 0.12), transparent 26%),
+    linear-gradient(90deg, transparent 0 71%, rgba(17, 36, 31, 0.035) 71% 71.08%, transparent 71.08%),
+    var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.page::before {
+  border: 1px solid rgba(17, 36, 31, 0.08);
+  border-radius: 50%;
+  content: "";
+  height: 44vw;
+  pointer-events: none;
+  position: absolute;
+  right: -18vw;
+  top: 15vh;
+  width: 44vw;
+}
+
+.nav {
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+  display: grid;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.67rem;
+  grid-template-columns: 1fr auto 1fr;
+  letter-spacing: 0.03em;
+  padding: 1rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.nav p {
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.edition {
+  justify-self: end;
+}
+
+.wordmark {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  font-size: 0.73rem;
+  gap: 0.7rem;
+  text-decoration: none;
+}
+
+.wordmark span {
+  align-items: center;
+  background: var(--ink);
+  color: var(--panel);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  letter-spacing: -0.06em;
+  width: 2rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  min-height: calc(100vh - 59px);
+  position: relative;
+}
+
+.intro {
+  align-self: center;
+  max-width: 900px;
+  padding: clamp(3rem, 7vw, 7rem) clamp(2rem, 6vw, 6rem);
+}
+
+.kicker {
+  color: var(--rust);
+  display: inline-block;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin-bottom: 1.3rem;
+  text-transform: uppercase;
+}
+
+.intro h1 {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Avenir Next Condensed", sans-serif;
+  font-size: clamp(4rem, 6.9vw, 7.4rem);
+  font-weight: 600;
+  letter-spacing: -0.075em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.accent {
+  color: var(--teal);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.lede {
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 1.3vw, 1.16rem);
+  line-height: 1.7;
+  margin: 2rem 0 2.2rem;
+  max-width: 43rem;
+}
+
+.intake {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--ink);
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr) 8.5rem auto;
+  max-width: 58rem;
+}
+
+.urlField,
+.branchField {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.8rem 0.9rem 0.7rem;
+}
+
+.branchField {
+  border-left: 1px solid var(--rule);
+}
+
+.urlField span,
+.branchField span {
+  color: var(--ink-soft);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.urlField input,
+.branchField input {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.8rem;
+  min-width: 0;
+  outline: none;
+  padding: 0;
+}
+
+.urlField input::placeholder {
+  color: rgba(17, 36, 31, 0.35);
+}
+
+.urlField:focus-within,
+.branchField:focus-within {
+  background: rgba(23, 108, 101, 0.07);
+  box-shadow: inset 0 0 0 2px var(--teal);
+}
+
+.analyzeButton {
+  align-items: center;
+  background: var(--ink);
+  border: 0;
+  color: var(--panel);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 1.2rem;
+  justify-content: space-between;
+  padding: 0 1rem;
+}
+
+.analyzeButton span {
+  color: var(--ochre);
+  font-size: 1.3rem;
+}
+
+.analyzeButton:hover,
+.analyzeButton:focus-visible {
+  background: var(--teal);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.formFoot {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  max-width: 58rem;
+}
+
+.formFoot button {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.25rem 0;
+}
+
+.formFoot button:hover,
+.formFoot button:focus-visible {
+  border-color: var(--rust);
+  color: var(--rust);
+  outline: none;
+}
+
+.formFoot p {
+  color: var(--ink-soft);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  margin: 0;
+}
+
+.progress {
+  background: rgba(244, 245, 237, 0.64);
+  border-left: 3px solid var(--teal);
+  margin-top: 1.4rem;
+  max-width: 58rem;
+  padding: 0.85rem 1rem;
+}
+
+.progress > div:first-child {
+  display: flex;
+  font-size: 0.8rem;
+  justify-content: space-between;
+}
+
+.progress strong {
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.7rem;
+}
+
+.progressTrack {
+  background: rgba(17, 36, 31, 0.12);
+  height: 3px;
+  margin: 0.6rem 0;
+}
+
+.progressTrack span {
+  background: var(--teal);
+  display: block;
+  height: 100%;
+  transition: width 300ms ease;
+}
+
+.progress p {
+  color: var(--ink-soft);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  margin: 0;
+}
+
+.error {
+  background: rgba(183, 86, 61, 0.1);
+  border-left: 3px solid var(--rust);
+  color: #7d3527;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  max-width: 58rem;
+  padding: 0.8rem 1rem;
+}
+
+.specimen {
+  border-left: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 1.6rem;
+  position: relative;
+}
+
+.specimenHead {
+  display: flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.62rem;
+  justify-content: space-between;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.specimenHead span {
+  color: var(--ink-soft);
+}
+
+.strata {
+  aspect-ratio: 1 / 1.1;
+  margin: auto 0;
+  min-height: 390px;
+  overflow: hidden;
+  position: relative;
+}
+
+.strata::before,
+.strata::after {
+  border: 1px solid rgba(17, 36, 31, 0.2);
+  border-radius: 50%;
+  content: "";
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.strata::before {
+  height: 82%;
+  width: 82%;
+}
+
+.strata::after {
+  height: 57%;
+  width: 57%;
+}
+
+.orbitOne,
+.orbitTwo {
+  border: 1px dashed rgba(23, 108, 101, 0.34);
+  border-radius: 50%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(17deg);
+}
+
+.orbitOne {
+  height: 68%;
+  width: 45%;
+}
+
+.orbitTwo {
+  height: 36%;
+  transform: translate(-50%, -50%) rotate(-29deg);
+  width: 72%;
+}
+
+.strata > span {
+  align-items: center;
+  background: var(--ink);
+  border-radius: 50%;
+  color: var(--panel);
+  display: flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  height: 4.6rem;
+  justify-content: center;
+  position: absolute;
+  width: 4.6rem;
+}
+
+.nodeOne {
+  left: 50%;
+  top: 8%;
+  transform: translateX(-50%);
+}
+
+.nodeTwo {
+  background: var(--teal) !important;
+  right: 7%;
+  top: 47%;
+}
+
+.nodeThree {
+  background: var(--ochre) !important;
+  bottom: 8%;
+  color: var(--ink) !important;
+  left: 15%;
+}
+
+.nodeFour {
+  background: var(--rust) !important;
+  bottom: 24%;
+  right: 10%;
+  transform: scale(0.62);
+}
+
+.scanline {
+  animation: scan 7s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(23, 108, 101, 0.26), transparent);
+  bottom: 0;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.specimenNotes {
+  border-block: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.specimenNotes div {
+  padding: 0.8rem 0.4rem;
+}
+
+.specimenNotes div + div {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.75rem;
+}
+
+.specimenNotes span {
+  color: var(--ink-soft);
+  display: block;
+  font-size: 0.62rem;
+  margin-bottom: 0.25rem;
+}
+
+.specimenNotes strong {
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  line-height: 1.45;
+}
+
+.marginNote {
+  color: var(--ink-soft);
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.25;
+  margin: 1rem 0 0;
+  text-align: right;
+}
+
+.analysisView {
+  background: var(--paper, #e2e9e2);
+  min-height: 100vh;
+}
+
+.analysisTopbar {
+  align-items: center;
+  background: #11241f;
+  color: #f4f5ed;
+  display: flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.65rem;
+  justify-content: space-between;
+  padding: 0.65rem 1.25rem;
+}
+
+.analysisTopbar a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.analysisTopbar a:hover,
+.analysisTopbar a:focus-visible {
+  color: #d39b34;
+  outline: none;
+}
+
+@keyframes scan {
+  from {
+    left: -8%;
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  to {
+    left: 108%;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1050px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .specimen {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    min-height: 560px;
+  }
+
+  .strata {
+    max-width: 600px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .nav {
+    grid-template-columns: 1fr auto;
+    padding: 0.8rem 1rem;
+  }
+
+  .nav p {
+    display: none;
+  }
+
+  .edition {
+    font-size: 0.56rem;
+  }
+
+  .intro {
+    padding: 3rem 1rem 2rem;
+  }
+
+  .intro h1 {
+    font-size: clamp(3.4rem, 14vw, 4.8rem);
+    line-height: 0.95;
+  }
+
+  .intake {
+    grid-template-columns: 1fr;
+  }
+
+  .branchField {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .analyzeButton {
+    min-height: 3.2rem;
+  }
+
+  .formFoot {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .specimen {
+    padding: 1rem;
+  }
+
+  .strata {
+    min-height: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanline {
+    animation: none;
+    left: 50%;
+  }
+
+  .progressTrack span {
+    transition: none;
+  }
+}

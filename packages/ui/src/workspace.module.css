@@ -1,0 +1,577 @@
+.workspace {
+  --ink: #11241f;
+  --ink-soft: #4f625b;
+  --paper: #e4eae3;
+  --panel: #f4f5ed;
+  --teal: #176c65;
+  --rust: #b7563d;
+  --ochre: #d39b34;
+  --rule: rgba(17, 36, 31, 0.2);
+  color: var(--ink);
+  display: grid;
+  gap: 0;
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+}
+
+.eyebrow {
+  color: var(--ink-soft);
+  display: block;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.workspaceHeader {
+  align-items: end;
+  border-block: 1px solid var(--rule);
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.workspaceHeader h1 {
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(1.7rem, 4vw, 3.3rem);
+  font-stretch: condensed;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  margin: 0.22rem 0 0;
+}
+
+.workspaceHeader h1 span {
+  color: var(--rust);
+  display: inline-block;
+  margin-inline: 0.12em;
+  transform: translateY(-0.04em);
+}
+
+.repoMeta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.72rem;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.repoMeta > * {
+  background: rgba(255, 255, 255, 0.38);
+  border: 1px solid var(--rule);
+  padding: 0.35rem 0.52rem;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 25vw);
+  min-height: 590px;
+}
+
+.mapPanel {
+  border-right: 1px solid var(--rule);
+  min-width: 0;
+}
+
+.graphFrame {
+  background:
+    radial-gradient(circle at 23% 30%, rgba(23, 108, 101, 0.1), transparent 28%),
+    radial-gradient(circle at 76% 68%, rgba(211, 155, 52, 0.11), transparent 32%),
+    linear-gradient(rgba(17, 36, 31, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 36, 31, 0.035) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, auto, 28px 28px, 28px 28px, auto;
+  height: 100%;
+  min-height: 590px;
+  overflow: hidden;
+  position: relative;
+}
+
+.graphFrame::before,
+.graphFrame::after {
+  border: 1px solid rgba(17, 36, 31, 0.1);
+  border-radius: 50%;
+  content: "";
+  height: 56%;
+  left: 50%;
+  position: absolute;
+  top: 47%;
+  transform: translate(-50%, -50%);
+  width: 48%;
+}
+
+.graphFrame::after {
+  height: 39%;
+  transform: translate(-50%, -50%) rotate(-7deg);
+  width: 33%;
+}
+
+.graphLegend {
+  display: flex;
+  flex-wrap: wrap;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.62rem;
+  gap: 0.8rem;
+  left: 1rem;
+  letter-spacing: 0.06em;
+  position: absolute;
+  text-transform: uppercase;
+  top: 1rem;
+  z-index: 3;
+}
+
+.graphLegend span::before {
+  border-radius: 50%;
+  content: "";
+  display: inline-block;
+  height: 0.55rem;
+  margin-right: 0.32rem;
+  vertical-align: -0.04rem;
+  width: 0.55rem;
+}
+
+.graphLegend [data-tone="added"]::before {
+  background: #2d8b72;
+}
+
+.graphLegend [data-tone="growing"]::before {
+  background: var(--ochre);
+}
+
+.graphLegend [data-tone="unchanged"]::before {
+  background: #295d58;
+}
+
+.graphLegend [data-tone="removed"]::before {
+  background: var(--rust);
+}
+
+.sigmaCanvas {
+  inset: 2.7rem 1rem 4.2rem;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.sigmaCanvas[data-ready="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.graphSvg {
+  height: calc(100% - 5rem);
+  inset: 2.7rem 1rem 2.3rem;
+  overflow: visible;
+  position: absolute;
+  width: calc(100% - 2rem);
+}
+
+.graphEdge {
+  stroke: rgba(29, 58, 52, 0.34);
+}
+
+.graphEdge[data-status="added"] {
+  stroke: rgba(45, 139, 114, 0.62);
+}
+
+.graphEdge[data-status="removed"] {
+  stroke: rgba(183, 86, 61, 0.55);
+  stroke-dasharray: 0.03 0.025;
+}
+
+.graphNode {
+  cursor: pointer;
+  outline: none;
+}
+
+.graphNode circle {
+  stroke: rgba(244, 245, 237, 0.86);
+  stroke-width: 0.012;
+  transition: filter 160ms ease, stroke-width 160ms ease;
+}
+
+.graphNode:hover circle,
+.graphNode:focus-visible circle,
+.graphNode[data-selected="true"] circle {
+  filter: drop-shadow(0 0 0.04px var(--ink));
+  stroke: var(--ink);
+  stroke-width: 0.018;
+}
+
+.graphNode text {
+  fill: var(--ink);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.055px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.moduleRail {
+  bottom: 3rem;
+  display: flex;
+  gap: 0.32rem;
+  left: 1rem;
+  max-width: calc(100% - 2rem);
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+  position: absolute;
+  scrollbar-width: thin;
+  z-index: 4;
+}
+
+.moduleRail button {
+  align-items: center;
+  background: rgba(244, 245, 237, 0.7);
+  border: 1px solid rgba(17, 36, 31, 0.16);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.65rem;
+  gap: 0.38rem;
+  padding: 0.32rem 0.5rem;
+}
+
+.moduleRail button:hover,
+.moduleRail button:focus-visible,
+.moduleRail button[data-active="true"] {
+  background: var(--ink);
+  color: var(--panel);
+  outline: none;
+}
+
+.moduleRail button span {
+  border-radius: 50%;
+  height: 0.46rem;
+  width: 0.46rem;
+}
+
+.graphCaption {
+  align-items: center;
+  border-top: 1px solid var(--rule);
+  bottom: 0;
+  display: flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.62rem;
+  gap: 1rem;
+  left: 0;
+  letter-spacing: 0.035em;
+  padding: 0.65rem 1rem;
+  position: absolute;
+  right: 0;
+}
+
+.graphCaption strong {
+  color: var(--teal);
+  margin-left: auto;
+}
+
+.evidence {
+  background: var(--panel);
+  max-height: 720px;
+  overflow-y: auto;
+  padding: 1.4rem;
+}
+
+.evidenceHeading {
+  border-bottom: 3px solid var(--ink);
+  padding-bottom: 0.75rem;
+}
+
+.evidenceHeading h2 {
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: -0.035em;
+  margin: 0.15rem 0 0;
+}
+
+.nodeDossier {
+  border-bottom: 1px solid var(--rule);
+  padding: 1.2rem 0;
+}
+
+.nodeDossier h3 {
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0.6rem 0 0.35rem;
+}
+
+.nodeDossier code,
+.eventCard code {
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.69rem;
+}
+
+.statusTag {
+  background: var(--teal);
+  color: white;
+  display: inline-flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  letter-spacing: 0.08em;
+  padding: 0.22rem 0.42rem;
+  text-transform: uppercase;
+}
+
+.statusTag[data-status="growing"] {
+  background: var(--ochre);
+  color: var(--ink);
+}
+
+.statusTag[data-status="removed"],
+.statusTag[data-status="shrinking"] {
+  background: var(--rust);
+}
+
+.nodeDossier dl {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 1rem 0 0;
+}
+
+.nodeDossier dl div {
+  border-left: 1px solid var(--rule);
+  padding-left: 0.55rem;
+}
+
+.nodeDossier dt {
+  color: var(--ink-soft);
+  font-size: 0.65rem;
+}
+
+.nodeDossier dd {
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.72rem;
+  margin: 0.2rem 0 0;
+}
+
+.events {
+  padding-top: 1.2rem;
+}
+
+.events > h3 {
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: 1.05rem;
+  margin: 0 0 0.8rem;
+}
+
+.eventCard {
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid var(--rule);
+  margin-bottom: 0.8rem;
+  padding: 0.9rem;
+}
+
+.eventTopline {
+  align-items: center;
+  color: var(--ink-soft);
+  display: flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.6rem;
+  justify-content: space-between;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eventTopline em {
+  border: 1px solid var(--rust);
+  color: var(--rust);
+  font-style: normal;
+  padding: 0.06rem 0.3rem;
+}
+
+.eventCard h4 {
+  font-size: 0.92rem;
+  line-height: 1.25;
+  margin: 0.55rem 0 0.35rem;
+}
+
+.eventCard p {
+  color: var(--ink-soft);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.63rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.commitLine {
+  align-items: center;
+  display: flex;
+  font-size: 0.68rem;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.commitLine code {
+  background: var(--ink);
+  color: var(--panel);
+  padding: 0.12rem 0.3rem;
+}
+
+.eventCard ul {
+  border-top: 1px solid var(--rule);
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0 0;
+}
+
+.eventCard li + li {
+  margin-top: 0.28rem;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.timeline {
+  background: var(--panel);
+  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 0.32fr) minmax(0, 1fr);
+  padding: 1rem 1.25rem 1.15rem;
+}
+
+.timelineMeta {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto 1fr;
+}
+
+.timelineMeta strong {
+  display: block;
+  font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  font-size: 1rem;
+  margin-top: 0.08rem;
+}
+
+.timelineMeta p {
+  color: var(--ink-soft);
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.61rem;
+  grid-column: 2;
+  margin: 0;
+}
+
+.playButton {
+  align-items: center;
+  align-self: stretch;
+  background: var(--ink);
+  border: 0;
+  color: var(--panel);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+  font-size: 0.68rem;
+  justify-content: center;
+  min-width: 3.5rem;
+  padding: 0.5rem;
+}
+
+.playButton:hover,
+.playButton:focus-visible {
+  background: var(--teal);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.timelineTrack {
+  align-self: center;
+  min-width: 0;
+  padding: 1.3rem 0.5rem 1rem;
+  position: relative;
+}
+
+.timelineRange {
+  accent-color: var(--rust);
+  cursor: pointer;
+  width: 100%;
+}
+
+.timelineMarkers {
+  inset: 0 0.5rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.timelineMarker {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  height: 100%;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 24px;
+}
+
+.timelineMarker span {
+  background: var(--panel);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  height: 7px;
+  left: 50%;
+  position: absolute;
+  top: 2.23rem;
+  transform: translateX(-50%);
+  width: 7px;
+}
+
+.timelineMarker[data-active="true"] span,
+.timelineMarker:hover span,
+.timelineMarker:focus-visible span {
+  background: var(--rust);
+  box-shadow: 0 0 0 3px rgba(183, 86, 61, 0.18);
+}
+
+.timelineMarker:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 900px) {
+  .workspaceHeader {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .repoMeta {
+    justify-content: flex-start;
+  }
+
+  .workspaceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mapPanel {
+    border-bottom: 1px solid var(--rule);
+    border-right: 0;
+  }
+
+  .evidence {
+    max-height: none;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graphNode circle {
+    transition: none;
+  }
+}
