@@ -8,6 +8,12 @@ const bundleStore = new FileBundleStore(
   process.env.BUNDLE_DIRECTORY ?? ".data/bundles",
 );
 const runner = new MemoryRunner({ jobStore, bundleStore });
+void bundleStore.prune(24 * 60 * 60 * 1000);
+const bundlePruneTimer = setInterval(
+  () => void bundleStore.prune(24 * 60 * 60 * 1000),
+  60 * 60 * 1000,
+);
+bundlePruneTimer.unref();
 const server = buildServer({
   jobStore,
   bundleStore,

@@ -1,5 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  readdir,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import cors from "@fastify/cors";
@@ -195,6 +202,31 @@ export class FileBundleStore implements BundleStore {
       }
       throw error;
     }
+  }
+
+  async prune(maxAgeMs: number, currentTime = Date.now()): Promise<void> {
+    let entries;
+    try {
+      entries = await readdir(this.rootDirectory, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return;
+      }
+      throw error;
+    }
+
+    const cutoff = currentTime - maxAgeMs;
+    await Promise.all(
+      entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".json.gz"))
+        .map(async (entry) => {
+          const filePath = path.join(this.rootDirectory, entry.name);
+          const metadata = await stat(filePath);
+          if (metadata.mtimeMs <= cutoff) {
+            await unlink(filePath);
+          }
+        }),
+    );
   }
 }
 
