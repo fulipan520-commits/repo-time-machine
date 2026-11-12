@@ -166,6 +166,7 @@ export interface ServerOptions {
   bundleStore: BundleStore;
   now?: () => Date;
   onJobCreated?: (job: AnalysisJob) => void;
+  onJobCancelled?: (jobId: string) => void;
   admission?: AdmissionPolicy;
   allowedOrigins?: string[];
 }
@@ -302,6 +303,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
         status: "cancelled",
         updatedAt: now().toISOString(),
       });
+      options.onJobCancelled?.(job.id);
       return reply.code(202).send(cancelled);
     },
   );

@@ -12,6 +12,7 @@ const server = buildServer({
   jobStore,
   bundleStore,
   onJobCreated: (job) => runner.enqueue(job),
+  onJobCancelled: (jobId) => runner.cancel(jobId),
 });
 
 await server.listen({ port, host });

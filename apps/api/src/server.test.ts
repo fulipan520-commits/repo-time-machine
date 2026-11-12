@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildServer,
   InMemoryBundleStore,
@@ -164,5 +164,23 @@ describe("analysis API", () => {
     expect(first.statusCode).toBe(202);
     expect(second.statusCode).toBe(429);
     expect(second.json().error.code).toBe("CAPACITY_REACHED");
+  });
+
+  it("notifies the runner when an analysis is cancelled", async () => {
+    const onJobCancelled = vi.fn();
+    const server = createServer({ onJobCancelled });
+    const create = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const jobId = create.json().id as string;
+
+    await server.inject({
+      method: "POST",
+      url: `/api/analyses/${jobId}/cancel`,
+    });
+
+    expect(onJobCancelled).toHaveBeenCalledWith(jobId);
   });
 });

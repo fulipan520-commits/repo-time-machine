@@ -23,9 +23,18 @@ export interface RunAnalysisJobOptions {
   job: AnalysisJob;
   jobStore: WorkerJobStore;
   bundleStore: WorkerBundleStore;
+  signal?: AbortSignal;
   workRoot?: string;
-  cloneRepository?: (job: AnalysisJob, destination: string) => Promise<void>;
-  analyze?: (job: AnalysisJob, repositoryPath: string) => Promise<AnalysisBundle>;
+  cloneRepository?: (
+    job: AnalysisJob,
+    destination: string,
+    signal?: AbortSignal,
+  ) => Promise<void>;
+  analyze?: (
+    job: AnalysisJob,
+    repositoryPath: string,
+    signal?: AbortSignal,
+  ) => Promise<AnalysisBundle>;
   now?: () => Date;
 }
 
@@ -34,6 +43,7 @@ export type RunAnalysisJobResult = AnalysisJob;
 async function cloneRepository(
   job: AnalysisJob,
   destination: string,
+  signal?: AbortSignal,
 ): Promise<void> {
   await exec(
     "git",
@@ -50,6 +60,7 @@ async function cloneRepository(
     {
       maxBuffer: 8 * 1024 * 1024,
       timeout: 5 * 60 * 1000,
+      signal,
     },
   );
 }
@@ -57,6 +68,7 @@ async function cloneRepository(
 async function analyze(
   job: AnalysisJob,
   repositoryPath: string,
+  signal?: AbortSignal,
 ): Promise<AnalysisBundle> {
   return analyzeRepository({
     repositoryPath,
@@ -65,6 +77,7 @@ async function analyze(
       owner: job.repository.owner,
       name: job.repository.name,
     },
+    signal,
   });
 }
 
@@ -93,18 +106,30 @@ export async function runAnalysisJob(
     await (options.cloneRepository ?? cloneRepository)(
       options.job,
       workDirectory,
+      options.signal,
     );
-    if (!(await canContinue(options.jobStore, options.job.id))) {
-      return (await options.jobStore.get(options.job.id)) ?? options.job;
+    if (
+      options.signal?.aborted ||
+      !(await canContinue(options.jobStore, options.job.id))
+    ) {
+      return (
+        (await update({ status: "cancelled" })) ?? options.job
+      );
     }
 
     await update({ status: "analyzing", progress: 35 });
     const bundle = await (options.analyze ?? analyze)(
       options.job,
       workDirectory,
+      options.signal,
     );
-    if (!(await canContinue(options.jobStore, options.job.id))) {
-      return (await options.jobStore.get(options.job.id)) ?? options.job;
+    if (
+      options.signal?.aborted ||
+      !(await canContinue(options.jobStore, options.job.id))
+    ) {
+      return (
+        (await update({ status: "cancelled" })) ?? options.job
+      );
     }
 
     await update({ status: "publishing", progress: 85 });
@@ -128,6 +153,11 @@ export async function runAnalysisJob(
       })) ?? options.job
     );
   } catch {
+    if (options.signal?.aborted) {
+      return (
+        (await update({ status: "cancelled" })) ?? options.job
+      );
+    }
     return (
       (await update({
         status: "failed",

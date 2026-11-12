@@ -16,6 +16,7 @@ export interface MemoryRunnerOptions {
 
 export class MemoryRunner {
   private readonly active = new Set<Promise<unknown>>();
+  private readonly controllers = new Map<string, AbortController>();
   private readonly pending: AnalysisJob[] = [];
   private readonly maxConcurrent: number;
 
@@ -26,6 +27,14 @@ export class MemoryRunner {
   enqueue(job: AnalysisJob): void {
     this.pending.push(job);
     this.pump();
+  }
+
+  cancel(jobId: string): void {
+    const pendingIndex = this.pending.findIndex((job) => job.id === jobId);
+    if (pendingIndex >= 0) {
+      this.pending.splice(pendingIndex, 1);
+    }
+    this.controllers.get(jobId)?.abort(new Error("Analysis cancelled."));
   }
 
   private pump(): void {
@@ -42,15 +51,19 @@ export class MemoryRunner {
   }
 
   private start(job: AnalysisJob): void {
+    const controller = new AbortController();
+    this.controllers.set(job.id, controller);
     const runOptions: RunAnalysisJobOptions = {
       job,
       jobStore: this.options.jobStore,
       bundleStore: this.options.bundleStore,
+      signal: controller.signal,
       ...(this.options.workRoot ? { workRoot: this.options.workRoot } : {}),
     };
     const running = (this.options.runner ?? runAnalysisJob)(runOptions).finally(
       () => {
         this.active.delete(running);
+        this.controllers.delete(job.id);
         this.pump();
       },
     );

@@ -120,4 +120,19 @@ describe("analyzeRepository", () => {
       "module-added",
     );
   });
+
+  it("stops before reading history when aborted", async () => {
+    const repositoryPath = await createFixtureRepository();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      analyzeRepository({
+        repositoryPath,
+        branch: "main",
+        repository: { owner: "fixture", name: "example" },
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow("Analysis cancelled");
+  });
 });

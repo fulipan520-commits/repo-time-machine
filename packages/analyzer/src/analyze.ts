@@ -53,6 +53,7 @@ interface AnalyzerFile {
 export interface AnalyzeRepositoryOptions {
   repositoryPath: string;
   branch?: string;
+  signal?: AbortSignal | undefined;
   repository: {
     owner: string;
     name: string;
@@ -62,6 +63,12 @@ export interface AnalyzeRepositoryOptions {
   maxModules?: number;
   maxFileSize?: number;
   now?: Date;
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new Error("Analysis cancelled");
+  }
 }
 
 interface ModuleState {
@@ -363,6 +370,7 @@ async function parseFile(
 export async function analyzeRepository(
   options: AnalyzeRepositoryOptions,
 ): Promise<AnalysisBundle> {
+  throwIfAborted(options.signal);
   const branch = options.branch ?? "main";
   const maxCommits = options.maxCommits ?? DEFAULT_MAX_COMMITS;
   const maxKeyframes = options.maxKeyframes ?? DEFAULT_MAX_KEYFRAMES;
@@ -380,9 +388,11 @@ export async function analyzeRepository(
   let excludedFiles = 0;
 
   for (const [commitIndex, commit] of commits.entries()) {
+    throwIfAborted(options.signal);
     const changes = await getChanges(options.repositoryPath, commit.sha);
 
     for (const change of changes) {
+      throwIfAborted(options.signal);
       if (change.oldPath) {
         files.delete(change.oldPath);
         imports.delete(change.oldPath);

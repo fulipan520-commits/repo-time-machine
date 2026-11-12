@@ -144,4 +144,32 @@ describe("runAnalysisJob", () => {
     expect(JSON.stringify(result)).not.toContain("secret internal stack");
     expect(await readdir(workRoot)).toEqual([]);
   });
+
+  it("marks an aborted analysis as cancelled", async () => {
+    const job = fixtureJob();
+    const store = new TestJobStore(job);
+    const workRoot = await mkdtemp(path.join(os.tmpdir(), "rtm-worker-"));
+    temporaryDirectories.push(workRoot);
+    const controller = new AbortController();
+    let receivedSignal: AbortSignal | undefined;
+
+    const result = await runAnalysisJob({
+      job,
+      jobStore: store,
+      bundleStore: { put: async () => undefined },
+      workRoot,
+      signal: controller.signal,
+      cloneRepository: async () => undefined,
+      analyze: async (_job, _path, signal) => {
+        receivedSignal = signal;
+        controller.abort();
+        return fixtureBundle(job);
+      },
+      now: () => new Date("2026-11-12T00:00:00.000Z"),
+    });
+
+    expect(receivedSignal).toBe(controller.signal);
+    expect(result.status).toBe("cancelled");
+    expect(await readdir(workRoot)).toEqual([]);
+  });
 });
