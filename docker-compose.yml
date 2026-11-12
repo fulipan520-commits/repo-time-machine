@@ -1,0 +1,25 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3001
+      BUNDLE_DIRECTORY: /data/bundles
+    ports:
+      - "3001:3001"
+    volumes:
+      - bundle-data:/data/bundles
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  bundle-data:

@@ -1,0 +1,11 @@
+FROM node:22-alpine
+
+RUN corepack enable
+WORKDIR /app
+
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @rtm/web build
+
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@rtm/web", "start"]

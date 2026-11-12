@@ -1,0 +1,27 @@
+{
+  "name": "@rtm/analyzer",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "repo-time-machine": "./bin/repo-time-machine.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "analyze": "tsx src/cli.ts analyze"
+  },
+  "dependencies": {
+    "@rtm/contracts": "workspace:*",
+    "tree-sitter-wasms": "^0.1.13",
+    "typescript": "^5.8.3",
+    "web-tree-sitter": "0.20.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "vitest": "^3.1.4"
+  }
+}
