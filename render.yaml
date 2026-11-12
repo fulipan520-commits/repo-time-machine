@@ -10,6 +10,16 @@ services:
         value: 0.0.0.0
       - key: BUNDLE_DIRECTORY
         value: /tmp/bundles
+      - key: MAX_CONCURRENT_ANALYSES
+        value: "1"
+      - key: MAX_ANALYSIS_DURATION_MS
+        value: "600000"
+      - key: ANALYSIS_RATE_LIMIT
+        value: "8"
+      - key: ANALYSIS_RATE_WINDOW_MS
+        value: "60000"
+      - key: MAX_OUTSTANDING_JOBS
+        value: "4"
 
   - type: web
     name: repo-time-machine-web-520

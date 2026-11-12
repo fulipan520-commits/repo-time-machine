@@ -12,6 +12,7 @@ export interface MemoryRunnerOptions {
   workRoot?: string;
   runner?: typeof runAnalysisJob;
   maxConcurrent?: number;
+  maxDurationMs?: number;
 }
 
 export class MemoryRunner {
@@ -59,6 +60,9 @@ export class MemoryRunner {
       bundleStore: this.options.bundleStore,
       signal: controller.signal,
       ...(this.options.workRoot ? { workRoot: this.options.workRoot } : {}),
+      ...(this.options.maxDurationMs
+        ? { maxDurationMs: this.options.maxDurationMs }
+        : {}),
     };
     const running = (this.options.runner ?? runAnalysisJob)(runOptions).finally(
       () => {
