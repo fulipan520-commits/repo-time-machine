@@ -27,6 +27,7 @@ it("proxies API requests to the configured upstream", async () => {
     "https://api.example.com/api/analyses/job-1?full=1",
   );
   expect(init.method).toBe("GET");
+  expect(init.signal).toBeInstanceOf(AbortSignal);
   expect(response.status).toBe(200);
   await expect(response.json()).resolves.toEqual({ status: "ok" });
 });

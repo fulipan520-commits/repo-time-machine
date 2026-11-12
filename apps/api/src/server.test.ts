@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildServer,
   InMemoryBundleStore,
@@ -8,11 +8,14 @@ import {
 
 const servers: Array<Awaited<ReturnType<typeof buildServer>>> = [];
 
-function createServer(): ReturnType<typeof buildServer> {
+function createServer(
+  options: Partial<Parameters<typeof buildServer>[0]> = {},
+): ReturnType<typeof buildServer> {
   const server = buildServer({
     jobStore: new InMemoryJobStore(),
     bundleStore: new InMemoryBundleStore(),
     now: () => new Date("2026-11-12T00:00:00.000Z"),
+    ...options,
   });
   servers.push(server);
   return server;
@@ -42,6 +45,9 @@ describe("validateGithubRepository", () => {
     ).toBe(false);
     expect(
       validateGithubRepository("https://github.com/acme/widget/tree/main").ok,
+    ).toBe(false);
+    expect(
+      validateGithubRepository("http://github.com/acme/widget").ok,
     ).toBe(false);
   });
 });
@@ -106,5 +112,119 @@ describe("analysis API", () => {
 
     expect(invalid.statusCode).toBe(400);
     expect(missing.statusCode).toBe(404);
+  });
+
+  it("rate limits analysis creation by client address", async () => {
+    const server = createServer({
+      admission: {
+        maxRequestsPerWindow: 1,
+        windowMs: 60_000,
+        maxOutstandingJobs: 10,
+      },
+    });
+
+    const first = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const second = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+
+    expect(first.statusCode).toBe(202);
+    expect(second.statusCode).toBe(429);
+    expect(second.headers["retry-after"]).toBe("60");
+    expect(second.json().error.code).toBe("RATE_LIMITED");
+  });
+
+  it("rejects new jobs when the outstanding-job cap is reached", async () => {
+    const server = createServer({
+      admission: {
+        maxRequestsPerWindow: 10,
+        windowMs: 60_000,
+        maxOutstandingJobs: 1,
+      },
+    });
+
+    const first = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.10",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const second = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      remoteAddress: "203.0.113.11",
+      payload: { repositoryUrl: "https://github.com/acme/other" },
+    });
+
+    expect(first.statusCode).toBe(202);
+    expect(second.statusCode).toBe(429);
+    expect(second.json().error.code).toBe("CAPACITY_REACHED");
+  });
+
+  it("notifies the runner when an analysis is cancelled", async () => {
+    const onJobCancelled = vi.fn();
+    const server = createServer({ onJobCancelled });
+    const create = await server.inject({
+      method: "POST",
+      url: "/api/analyses",
+      payload: { repositoryUrl: "https://github.com/acme/widget" },
+    });
+    const jobId = create.json().id as string;
+
+    await server.inject({
+      method: "POST",
+      url: `/api/analyses/${jobId}/cancel`,
+    });
+
+    expect(onJobCancelled).toHaveBeenCalledWith(jobId);
+  });
+});
+
+describe("InMemoryJobStore", () => {
+  it("prunes expired terminal jobs when new work arrives", async () => {
+    let currentTime = 0;
+    const store = new InMemoryJobStore(
+      { maxTerminalAgeMs: 1_000, maxEntries: 10 },
+      () => currentTime,
+    );
+    const base = {
+      repository: {
+        owner: "acme",
+        name: "widget",
+        canonicalUrl: "https://github.com/acme/widget",
+      },
+      branch: "main",
+      progress: 100,
+      createdAt: "1970-01-01T00:00:00.000Z",
+      updatedAt: "1970-01-01T00:00:00.000Z",
+    };
+    await store.create({
+      ...base,
+      id: "00000000-0000-4000-8000-000000000001",
+      status: "ready",
+    });
+    currentTime = 2_000;
+
+    await store.create({
+      ...base,
+      id: "00000000-0000-4000-8000-000000000002",
+      status: "queued",
+      progress: 0,
+    });
+
+    expect(
+      await store.get("00000000-0000-4000-8000-000000000001"),
+    ).toBeUndefined();
+    expect(
+      await store.get("00000000-0000-4000-8000-000000000002"),
+    ).toBeDefined();
   });
 });

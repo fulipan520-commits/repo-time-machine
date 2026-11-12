@@ -91,14 +91,25 @@ function importsFromNode(node: Parser.SyntaxNode): string[] {
     return [];
   }
 
-  const match = statement.match(/^from\s+(\.*)([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)?\s+import\b/);
+  const match = statement.match(
+    /^from\s+(\.*)([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)?\s+import\s+([\s\S]+)$/,
+  );
   if (!match) {
     return [];
   }
 
   const dots = match[1] ?? "";
   const moduleName = match[2] ?? "";
-  return moduleName ? [`${dots}${moduleName}`] : [];
+  if (moduleName) {
+    return [`${dots}${moduleName}`];
+  }
+
+  return (match[3] ?? "")
+    .replace(/[()]/g, "")
+    .split(",")
+    .map((part) => part.trim().split(/\s+as\s+/)[0] ?? "")
+    .filter((name) => /^[A-Za-z_]\w*$/.test(name))
+    .map((name) => `${dots}${name}`);
 }
 
 export async function extractPythonImports(

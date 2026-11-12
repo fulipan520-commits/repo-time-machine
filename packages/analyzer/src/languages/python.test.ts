@@ -30,3 +30,15 @@ it("resolves package imports without inventing external files", async () => {
     "pkg/jobs/worker.py",
   ]);
 });
+
+it("resolves modules imported from the current package", async () => {
+  const imports = await extractPythonImports(
+    "pkg/service.py",
+    "from . import models\nfrom . import jobs as background_jobs",
+  );
+
+  expect(imports.map((entry) => entry.targetFile)).toEqual([
+    "pkg/models.py",
+    "pkg/jobs.py",
+  ]);
+});

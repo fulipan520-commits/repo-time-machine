@@ -21,6 +21,11 @@ Environment variables:
 | `HOST` | `127.0.0.1` | API bind address |
 | `BUNDLE_DIRECTORY` | `.data/bundles` | Local snapshot storage |
 | `API_ORIGIN` | `http://127.0.0.1:3001` | Web server proxy origin |
+| `MAX_CONCURRENT_ANALYSES` | `1` | Worker jobs allowed to process simultaneously |
+| `MAX_ANALYSIS_DURATION_MS` | `600000` | Total analysis deadline |
+| `ANALYSIS_RATE_LIMIT` | `8` | Accepted jobs per client window |
+| `ANALYSIS_RATE_WINDOW_MS` | `60000` | Rate-limit window |
+| `MAX_OUTSTANDING_JOBS` | `4` | Queued and running job capacity |
 
 ## Docker
 

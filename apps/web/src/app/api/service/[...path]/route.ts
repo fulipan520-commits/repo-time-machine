@@ -42,6 +42,7 @@ async function proxy(request: Request, context: RouteContext) {
       headers,
       body: hasBody ? await request.text() : null,
       cache: "no-store",
+      signal: AbortSignal.timeout(30_000),
     });
 
     const responseHeaders = new Headers();

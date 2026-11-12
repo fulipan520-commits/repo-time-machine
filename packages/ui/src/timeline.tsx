@@ -18,6 +18,30 @@ function shortDate(value: string): string {
   }).format(new Date(value));
 }
 
+export function timelinePercent(
+  snapshots: readonly Snapshot[],
+  index: number,
+): number {
+  const snapshot = snapshots[index];
+  const first = snapshots[0];
+  const last = snapshots[snapshots.length - 1];
+  if (!snapshot || !first || !last || snapshots.length <= 1) {
+    return 0;
+  }
+
+  const firstTime = Date.parse(first.committedAt);
+  const lastTime = Date.parse(last.committedAt);
+  const currentTime = Date.parse(snapshot.committedAt);
+  if (lastTime <= firstTime) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    Math.min(100, ((currentTime - firstTime) / (lastTime - firstTime)) * 100),
+  );
+}
+
 export function Timeline({
   snapshots,
   activeIndex,
@@ -88,7 +112,7 @@ export function Timeline({
                 className={styles.timelineMarker}
                 data-active={index === activeIndex}
                 style={{
-                  left: `${(index / Math.max(1, snapshots.length - 1)) * 100}%`,
+                  left: `${timelinePercent(snapshots, index)}%`,
                 }}
                 aria-label={title}
                 title={title}

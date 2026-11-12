@@ -17,7 +17,11 @@ file paths.
 - CLI bundle generation
 - Fastify API with task creation, status, cancellation, and compressed bundles
 - Worker state machine with temporary-checkout cleanup and sanitized failures
+- Anonymous admission limits, bounded worker concurrency, total analysis deadlines,
+  and active-job cancellation
+- Terminal-job retention and stale snapshot cleanup for single-node deployments
 - Next.js workspace with WebGL graph rendering, SVG fallback, timeline selection,
+  true-time keyframes, dependency-neighborhood highlighting,
   keyboard-accessible module index, evidence panel, and responsive layout
 
 ## Quick start

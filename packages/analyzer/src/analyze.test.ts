@@ -119,5 +119,53 @@ describe("analyzeRepository", () => {
     expect(bundle.keyframes[2]?.events.map((event) => event.type)).toContain(
       "module-added",
     );
+    expect(
+      bundle.keyframes[2]?.nodes.find((node) => node.id === "src/app")
+        ?.lastChanged,
+    ).toBe("2026-01-02T00:00:00.000Z");
+  });
+
+  it("stops before reading history when aborted", async () => {
+    const repositoryPath = await createFixtureRepository();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      analyzeRepository({
+        repositoryPath,
+        branch: "main",
+        repository: { owner: "fixture", name: "example" },
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow("Analysis cancelled");
+  });
+
+  it("enforces the source-file limit", async () => {
+    const repositoryPath = await createFixtureRepository();
+
+    await expect(
+      analyzeRepository({
+        repositoryPath,
+        branch: "main",
+        repository: { owner: "fixture", name: "example" },
+        maxSourceFiles: 1,
+      }),
+    ).rejects.toThrow("Source file limit exceeded");
+  });
+
+  it("reports final-file coverage instead of cumulative skipped changes", async () => {
+    const repositoryPath = await createFixtureRepository();
+    const bundle = await analyzeRepository({
+      repositoryPath,
+      branch: "main",
+      repository: { owner: "fixture", name: "example" },
+      maxFileSize: 1,
+    });
+
+    expect(bundle.coverage).toEqual({
+      sourceFiles: 2,
+      parsedFiles: 0,
+      excludedFiles: 2,
+    });
   });
 });
