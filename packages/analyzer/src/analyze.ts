@@ -30,6 +30,7 @@ const DEFAULT_MAX_COMMITS = 2_000;
 const DEFAULT_MAX_KEYFRAMES = 60;
 const DEFAULT_MAX_MODULES = 500;
 const DEFAULT_MAX_FILE_SIZE = 1024 * 1024;
+const DEFAULT_MAX_SOURCE_FILES = 20_000;
 
 const ignoredSegments = new Set([
   ".git",
@@ -62,6 +63,7 @@ export interface AnalyzeRepositoryOptions {
   maxKeyframes?: number;
   maxModules?: number;
   maxFileSize?: number;
+  maxSourceFiles?: number;
   now?: Date;
 }
 
@@ -376,6 +378,7 @@ export async function analyzeRepository(
   const maxKeyframes = options.maxKeyframes ?? DEFAULT_MAX_KEYFRAMES;
   const maxModules = options.maxModules ?? DEFAULT_MAX_MODULES;
   const maxFileSize = options.maxFileSize ?? DEFAULT_MAX_FILE_SIZE;
+  const maxSourceFiles = options.maxSourceFiles ?? DEFAULT_MAX_SOURCE_FILES;
   const headSha = await getHeadSha(options.repositoryPath, branch);
   const commits = await listCommits(options.repositoryPath, branch, maxCommits);
   const aliases = await readAliases(options.repositoryPath, headSha);
@@ -429,6 +432,9 @@ export async function analyzeRepository(
         contentHash: createHash("sha1").update(source).digest("hex"),
       };
       files.set(change.path, file);
+      if (files.size > maxSourceFiles) {
+        throw new Error("Source file limit exceeded");
+      }
       imports.set(
         change.path,
         await parseFile(

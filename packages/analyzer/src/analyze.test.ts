@@ -135,4 +135,17 @@ describe("analyzeRepository", () => {
       }),
     ).rejects.toThrow("Analysis cancelled");
   });
+
+  it("enforces the source-file limit", async () => {
+    const repositoryPath = await createFixtureRepository();
+
+    await expect(
+      analyzeRepository({
+        repositoryPath,
+        branch: "main",
+        repository: { owner: "fixture", name: "example" },
+        maxSourceFiles: 1,
+      }),
+    ).rejects.toThrow("Source file limit exceeded");
+  });
 });

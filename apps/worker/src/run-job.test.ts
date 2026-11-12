@@ -168,8 +168,44 @@ describe("runAnalysisJob", () => {
       now: () => new Date("2026-11-12T00:00:00.000Z"),
     });
 
-    expect(receivedSignal).toBe(controller.signal);
+    expect(receivedSignal?.aborted).toBe(true);
     expect(result.status).toBe("cancelled");
+    expect(await readdir(workRoot)).toEqual([]);
+  });
+
+  it("fails with a timeout code when the total job budget is exceeded", async () => {
+    const job = fixtureJob();
+    const store = new TestJobStore(job);
+    const workRoot = await mkdtemp(path.join(os.tmpdir(), "rtm-worker-"));
+    temporaryDirectories.push(workRoot);
+
+    const result = await runAnalysisJob({
+      job,
+      jobStore: store,
+      bundleStore: { put: async () => undefined },
+      workRoot,
+      maxDurationMs: 10,
+      cloneRepository: async () => undefined,
+      analyze: async (_job, _path, signal) =>
+        new Promise((_resolve, reject) => {
+          const fallback = setTimeout(
+            () => reject(new Error("fallback")),
+            80,
+          );
+          signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(fallback);
+              reject(new Error("aborted"));
+            },
+            { once: true },
+          );
+        }),
+      now: () => new Date("2026-11-12T00:00:00.000Z"),
+    });
+
+    expect(result.status).toBe("failed");
+    expect(result.error?.code).toBe("ANALYSIS_TIMEOUT");
     expect(await readdir(workRoot)).toEqual([]);
   });
 });

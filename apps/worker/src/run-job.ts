@@ -24,6 +24,7 @@ export interface RunAnalysisJobOptions {
   jobStore: WorkerJobStore;
   bundleStore: WorkerBundleStore;
   signal?: AbortSignal;
+  maxDurationMs?: number;
   workRoot?: string;
   cloneRepository?: (
     job: AnalysisJob,
@@ -94,6 +95,16 @@ export async function runAnalysisJob(
 ): Promise<RunAnalysisJobResult> {
   const now = options.now ?? (() => new Date());
   const workRoot = options.workRoot ?? os.tmpdir();
+  const maxDurationMs = options.maxDurationMs ?? 10 * 60 * 1000;
+  const timeoutController = new AbortController();
+  const operationSignal = options.signal
+    ? AbortSignal.any([options.signal, timeoutController.signal])
+    : timeoutController.signal;
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    timeoutController.abort(new Error("Analysis timeout."));
+  }, maxDurationMs);
   const workDirectory = await mkdtemp(path.join(workRoot, "rtm-job-"));
   const update = async (patch: Partial<AnalysisJob>) =>
     options.jobStore.update(options.job.id, {
@@ -106,10 +117,10 @@ export async function runAnalysisJob(
     await (options.cloneRepository ?? cloneRepository)(
       options.job,
       workDirectory,
-      options.signal,
+      operationSignal,
     );
     if (
-      options.signal?.aborted ||
+      operationSignal.aborted ||
       !(await canContinue(options.jobStore, options.job.id))
     ) {
       return (
@@ -121,10 +132,10 @@ export async function runAnalysisJob(
     const bundle = await (options.analyze ?? analyze)(
       options.job,
       workDirectory,
-      options.signal,
+      operationSignal,
     );
     if (
-      options.signal?.aborted ||
+      operationSignal.aborted ||
       !(await canContinue(options.jobStore, options.job.id))
     ) {
       return (
@@ -158,6 +169,18 @@ export async function runAnalysisJob(
         (await update({ status: "cancelled" })) ?? options.job
       );
     }
+    if (timedOut) {
+      return (
+        (await update({
+          status: "failed",
+          progress: 100,
+          error: {
+            code: "ANALYSIS_TIMEOUT",
+            message: "Analysis exceeded the time limit.",
+          },
+        })) ?? options.job
+      );
+    }
     return (
       (await update({
         status: "failed",
@@ -170,6 +193,7 @@ export async function runAnalysisJob(
       })) ?? options.job
     );
   } finally {
+    clearTimeout(timeout);
     await rm(workDirectory, { recursive: true, force: true });
   }
 }
