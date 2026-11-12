@@ -386,9 +386,10 @@ export async function analyzeRepository(
   const files = new Map<string, AnalyzerFile>();
   const imports = new Map<string, FileImport[]>();
   const firstSeen = new Map<string, string>();
+  const lastChanged = new Map<string, string>();
   const candidates: ScoredSnapshot[] = [];
   let previousGraph: ModuleGraph = { nodes: [], edges: [] };
-  let excludedFiles = 0;
+  const excludedFiles = new Set<string>();
 
   for (const [commitIndex, commit] of commits.entries()) {
     throwIfAborted(options.signal);
@@ -399,17 +400,18 @@ export async function analyzeRepository(
       if (change.oldPath) {
         files.delete(change.oldPath);
         imports.delete(change.oldPath);
+        excludedFiles.delete(change.oldPath);
       }
 
       if (change.status.startsWith("D")) {
         files.delete(change.path);
         imports.delete(change.path);
+        excludedFiles.delete(change.path);
         continue;
       }
 
       const language = sourceLanguage(change.path);
       if (!language) {
-        excludedFiles += 1;
         continue;
       }
 
@@ -421,7 +423,7 @@ export async function analyzeRepository(
       if (Buffer.byteLength(source, "utf8") > maxFileSize) {
         files.delete(change.path);
         imports.delete(change.path);
-        excludedFiles += 1;
+        excludedFiles.add(change.path);
         continue;
       }
 
@@ -431,6 +433,7 @@ export async function analyzeRepository(
         loc: lineCount(source),
         contentHash: createHash("sha1").update(source).digest("hex"),
       };
+      excludedFiles.delete(change.path);
       files.set(change.path, file);
       if (files.size > maxSourceFiles) {
         throw new Error("Source file limit exceeded");
@@ -469,11 +472,25 @@ export async function analyzeRepository(
     const statuses = compareStatus(previousGraph, graph);
 
     for (const node of statuses.nodes) {
+      const changed = changes.some((change) => {
+        const paths = [change.path, change.oldPath].filter(
+          (value): value is string => Boolean(value),
+        );
+        return paths.some(
+          (filePath) =>
+            node.id === "." ||
+            filePath === node.id ||
+            filePath.startsWith(`${node.id}/`),
+        );
+      });
       if (!firstSeen.has(node.id)) {
         firstSeen.set(node.id, commit.authoredAt);
       }
+      if (!lastChanged.has(node.id) || changed || node.status === "removed") {
+        lastChanged.set(node.id, commit.authoredAt);
+      }
       node.firstSeen = firstSeen.get(node.id) ?? commit.authoredAt;
-      node.lastChanged = commit.authoredAt;
+      node.lastChanged = lastChanged.get(node.id) ?? commit.authoredAt;
     }
 
     const snapshot: Snapshot = {
@@ -527,9 +544,9 @@ export async function analyzeRepository(
       maxModules,
     },
     coverage: {
-      sourceFiles: files.size,
+      sourceFiles: files.size + excludedFiles.size,
       parsedFiles: files.size,
-      excludedFiles,
+      excludedFiles: excludedFiles.size,
     },
     keyframes: selected.length > 0 ? selected : [
       {

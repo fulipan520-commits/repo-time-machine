@@ -10,13 +10,19 @@ export function selectKeyframes(
   candidates: readonly ScoredSnapshot[],
   maxKeyframes: number,
 ): Snapshot[] {
-  if (candidates.length <= maxKeyframes) {
+  const limit = Math.max(0, Math.floor(maxKeyframes));
+  if (limit === 0) {
+    return [];
+  }
+  if (candidates.length <= limit) {
     return candidates.map((candidate) => candidate.snapshot);
   }
 
   const selected = new Set<ScoredSnapshot>();
-  selected.add(candidates[0]!);
   selected.add(candidates[candidates.length - 1]!);
+  if (limit > 1) {
+    selected.add(candidates[0]!);
+  }
 
   const middle = candidates
     .slice(1, -1)
@@ -27,7 +33,7 @@ export function selectKeyframes(
     );
 
   for (const candidate of middle) {
-    if (selected.size >= maxKeyframes) {
+    if (selected.size >= limit) {
       break;
     }
     selected.add(candidate);
