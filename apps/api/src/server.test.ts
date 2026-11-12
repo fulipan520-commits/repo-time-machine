@@ -46,6 +46,9 @@ describe("validateGithubRepository", () => {
     expect(
       validateGithubRepository("https://github.com/acme/widget/tree/main").ok,
     ).toBe(false);
+    expect(
+      validateGithubRepository("http://github.com/acme/widget").ok,
+    ).toBe(false);
   });
 });
 

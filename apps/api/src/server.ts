@@ -36,8 +36,8 @@ export function validateGithubRepository(url: string): RepositoryValidation {
     return { ok: false, message: "Enter a valid GitHub repository URL." };
   }
 
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    return { ok: false, message: "Only HTTP(S) URLs are accepted." };
+  if (parsed.protocol !== "https:") {
+    return { ok: false, message: "Only HTTPS GitHub URLs are accepted." };
   }
   if (parsed.hostname.toLowerCase() !== "github.com") {
     return { ok: false, message: "Only github.com repositories are accepted." };
